@@ -581,26 +581,27 @@ __global__ void calculate_V_ph_k2(
 	}
 }
 
-__global__ void calculate_third_term2(
+__global__ void calculate_third_term_y(
 	const double *__restrict__ g,
 	const double *__restrict__ S,
 	double *__restrict__ third_term,
 	const int nRows,
 	const int nCols)
 {
-	const unsigned int tid = threadIdx.x + blockIdx.x * blockDim.x;
+	const unsigned int tid_y = threadIdx.x + blockIdx.x * blockDim.x;
+	const unsigned int i = threadIdx.y + blockIdx.y * blockDim.y;
 
 	double x_shfl_src, x_shfl_dest;
 
 	double y_val = 0.0;
 
-#pragma unroll
+	#pragma unroll
 	for (unsigned int m = 0; m < ((nCols + BLOCK_SIZE - 1) / BLOCK_SIZE); ++m)
 	{
 		if ((m * BLOCK_SIZE + threadIdx.x) < nCols)
 		{
-			x_shfl_src = (2.0 * S[threadIdx.x + m * BLOCK_SIZE] + 1.0) * pow(1.0 - 1.0 / S[threadIdx.x + m * BLOCK_SIZE], 2);
-			x_shfl_src *= -0.25 * pow((double)(threadIdx.x + m * BLOCK_SIZE), 3);
+			x_shfl_src = (2.0 * S[threadIdx.x + m * BLOCK_SIZE] + 1.0) * (1.0 - 1.0 / S[threadIdx.x + m * BLOCK_SIZE]) * (1.0 - 1.0 / S[threadIdx.x + m * BLOCK_SIZE]);
+			x_shfl_src *= -0.25 * ((double)(threadIdx.x + m * BLOCK_SIZE) * (double)(threadIdx.x + m * BLOCK_SIZE));
 		}
 		else
 		{
@@ -608,7 +609,7 @@ __global__ void calculate_third_term2(
 		}
 		__syncthreads();
 
-		//        #pragma unroll
+		#pragma unroll
 		for (int e = 0; e < 32; ++e)
 		{
 			// --- Column-major ordering - faster
