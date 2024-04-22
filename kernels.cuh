@@ -411,17 +411,20 @@ __global__ void calculate_first_term(double *d_g, double *d_first_term, double *
 __global__ void calculate_second_term(double *d_g, double *d_second_term)
 {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
-	double aux;
-	if (i < N - 7)
+	int j = blockIdx.y * blockDim.y + threadIdx.y;
+	double aux_x, aux_y;
+	if (i < N - 7 && j < N - 7)
 	{
-		aux = ((-147.0 * d_g[i] + 360.0 * d_g[i + 1] - 450.0 * d_g[i + 2] + 400.0 * d_g[i + 3] - 225.0 * d_g[i + 4] + 72.0 * d_g[i + 5] - 10.0 * d_g[i + 6]) / (60.0 * dr));
+		aux_x = ((-147.0 * d_g[i * N + j] + 360.0 * d_g[(i + 1) * N + j] - 450.0 * d_g[(i + 2) * N + j] + 400.0 * d_g[(i + 3) * N + j] - 225.0 * d_g[(i + 4) * N + j] + 72.0 * d_g[(i + 5) * N + j] - 10.0 * d_g[(i + 6) * N + j]) / (60.0 * dr));
+		aux_y = ((-147.0 * d_g[i * N + j] + 360.0 * d_g[i * N + j + 1] - 450.0 * d_g[i * N + j + 2] + 400.0 * d_g[i * N + j + 3] - 225.0 * d_g[i * N + j + 4] + 72.0 * d_g[i * N + j + 5] - 10.0 * d_g[i * N + j + 6]) / (60.0 * dr));
 		// aux = (d_g[i + 1] - d_g[i]) / dr;
-		d_second_term[i] = aux * aux / (4.0 * d_g[i]);
+		d_second_term[i] = (aux_x * aux_x + aux_y * aux_y) / (4.0 * d_g[i * N + j]);
 	}
 	if (i > N - 6)
 	{
-		aux = ((d_g[i] - d_g[i - 1]) / dr);
-		d_second_term[i] = aux * aux / (4.0 * d_g[i]); // g(r) is even, then its derivative is odd
+		aux_x = ((d_g[i * N + j] - d_g[(i - 1) * N + j]) / dr);
+		aux_y = ((d_g[i * N + j] - d_g[i * N + j - 1]) / dr);
+		d_second_term[i] = (aux_x * aux_x + aux_y * aux_y) / (4.0 * d_g[i * N + j]); // g(r) is even, then its derivative is odd
 	}
 }
 
